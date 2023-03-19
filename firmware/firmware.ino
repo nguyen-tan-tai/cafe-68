@@ -65,6 +65,8 @@ void changeId(int deviceNumber) {
 void setup() {
   Serial.begin(115200);
   pinMode(39, INPUT);
+  pinMode(5, OUTPUT);
+  analogWrite(5, 50);
   for (int i = 0; i < MATRIX_COL_CNT; i++) {
     pinMode(COL_PINS[i], OUTPUT);
     digitalWrite(COL_PINS[i], LOW);
@@ -154,7 +156,8 @@ void keyPress(int key) {
     case KEY_NULL:
       break;
     case MED_MUT:
-      bleKeyboard.press(KEY_MEDIA_NEXT_TRACK);
+      bleKeyboard.press(KEY_MEDIA_MUTE);
+      break;
     case MED_VUP:
       bleKeyboard.press(KEY_MEDIA_VOLUME_UP);
       break;
@@ -201,7 +204,8 @@ void keyRelease(int key) {
     case KEY_NULL:
       break;
     case MED_MUT:
-      bleKeyboard.release(KEY_MEDIA_NEXT_TRACK);
+      bleKeyboard.release(KEY_MEDIA_MUTE);
+      break;
     case MED_VUP:
       bleKeyboard.release(KEY_MEDIA_VOLUME_UP);
       break;
