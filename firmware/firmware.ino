@@ -1,12 +1,12 @@
 #include "BleKeyboard.h"
 #include <EEPROM.h>
-BleKeyboard bleKeyboard("Caphe-68", "Tai Sang", 50);
+BleKeyboard bleKeyboard("Caphe-68", "7", 100);
 const byte MAX_DEVICE = 3;
-uint8_t MACAddress[MAX_DEVICE][6] = {
-  {0x35, 0xAF, 0xA4, 0x07, 0x0B, 0x66},
-  {0x31, 0xAE, 0xAA, 0x47, 0x0D, 0x61},
-  {0x31, 0xAE, 0xAC, 0x42, 0x0A, 0x31}
-};
+uint8_t MACAddress[MAX_DEVICE][6] = {{0x35, 0xAF, 0xA4, 0x07, 0x0B, 0x66}, {0x31, 0xAE, 0xAA, 0x47, 0x0D, 0x61}, {0x31, 0xAE, 0xAC, 0x42, 0x0A, 0x31}};
+const int ledPin = 5;
+const int freq = 5000;
+const int ledChannel = 0;
+const int resolution = 8;
 
 #define KEY_NULL 0x00
 #define KEY_MENU 0xED
@@ -32,8 +32,8 @@ uint8_t MACAddress[MAX_DEVICE][6] = {
 #define MAXIMUM_STROKES   10
 #define DEBOUNCE_DELAY    15
 
-const byte ROW_PINS[MATRIX_ROW_CNT] = {36, 39, 33, 34, 35};
-const byte COL_PINS[MATRIX_COL_CNT] = {15, 2, 4, 16, 17, 18, 23, 19, 32, 13, 12, 14, 25, 27, 26};
+const byte ROW_PINS[MATRIX_ROW_CNT] = {35, 34, 33, 39, 36};
+const byte COL_PINS[MATRIX_COL_CNT] = {2, 14, 12, 13, 27, 26, 25, 32, 23, 19, 18, 4, 16, 17, 15};
 const int KEY_MAP[LAYER_CNT][MATRIX_ROW_CNT][MATRIX_COL_CNT] = {
   {
     {KEY_ESC,        '1',          '2',          '3',      '4',      '5',      '6',      '7',      '8',      '9',      '0',            '-',             '=',            KEY_BACKSPACE,  KEY_DELETE},
@@ -63,10 +63,11 @@ void changeId(int deviceNumber) {
 }
 
 void setup() {
+  ledcSetup(ledChannel, freq, resolution);
+  ledcAttachPin(ledPin, ledChannel);
+  ledcWrite(ledChannel, 10);
+
   Serial.begin(115200);
-  pinMode(39, INPUT);
-  pinMode(5, OUTPUT);
-  analogWrite(5, 50);
   for (int i = 0; i < MATRIX_COL_CNT; i++) {
     pinMode(COL_PINS[i], OUTPUT);
     digitalWrite(COL_PINS[i], LOW);
@@ -251,27 +252,17 @@ unsigned long lastScanTime = 0;
 
 void loop() {
   delay(1);
+  if (!bleKeyboard.isConnected()) {
+    Serial.println("disconnected");
+    delay(100);
+    return;
+  }
   unsigned long scanTime = millis();
   if (scanTime - lastScanTime < DEBOUNCE_DELAY) {
     return;
   }
   lastScanTime = scanTime;
   readMatrixValue();
-  if (bleKeyboard.isConnected()) {
-    doKeyboard();
-  } else {
-    for (int r = 0; r < MATRIX_ROW_CNT; r++) {
-      for (int c = 0; c < MATRIX_COL_CNT; c++) {
-        int nk = CUR_MATRIX_VAL[r][c];
-        if (nk) {
-          Serial.print("  +   ");
-        } else {
-          Serial.print("  .   ");
-        }
-      }
-      Serial.println("");
-    }
-    Serial.println("-------------------------------------------------------------------------------------");
-  }
+  doKeyboard();
   rotateMatrixValue();
 }
